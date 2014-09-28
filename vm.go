@@ -10,30 +10,33 @@ type VirtualMachine struct {
 	Stack        Stack
 	Ipointer     int
 	Spointer     int
+	Registers    Registers
 }
 type Instructions [65536]string
 type Stack [256]int
+type Registers [16]int
 
-func Push(x int) {
-	//vm.Stack = append(vm.Stack[:], x)
+func Push(x int) error {
+	if vm.Spointer == 256 {
+		return errors.New("Stack overflow.")
+	}
 	vm.Stack[vm.Spointer] = x
 	vm.Spointer++
+	return nil
 }
 
 func Pop() (int, error) {
-	if len(vm.Stack) == 0 {
-		return 0, errors.New("Stack is empty.")
+	if vm.Spointer == 0 {
+		return 0, errors.New("Stack underflow.")
 	}
-	//x := vm.Stack[len(vm.Stack)-1:][0]
-	//vm.Stack = vm.Stack[:len(vm.Stack)-1]
 	vm.Spointer--
 	x := vm.Stack[vm.Spointer]
 	return x, nil
 }
 
 func Add() error {
-	if len(vm.Stack) < 2 {
-		return errors.New("Stack is too small.")
+	if vm.Spointer < 2 {
+		return errors.New("Stack underflow.")
 	}
 	x, err := Pop()
 	if err != nil {
@@ -43,7 +46,10 @@ func Add() error {
 	if err != nil {
 		return err
 	}
-	Push(x + y)
+	err = Push(x + y)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -52,8 +58,8 @@ func Sub() error {
 }
 
 func Mul() error {
-	if len(vm.Stack) < 2 {
-		return errors.New("Stack is too small.")
+	if vm.Spointer < 2 {
+		return errors.New("Stack underflow.")
 	}
 	x, err := Pop()
 	if err != nil {
@@ -67,13 +73,16 @@ func Mul() error {
 	for i := 0; i < y; i++ {
 		z = z + x
 	}
-	Push(z)
+	err = Push(z)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func Div() error {
-	if len(vm.Stack) < 2 {
-		return errors.New("Stack is too small.")
+	if vm.Spointer < 2 {
+		return errors.New("Stack underflow.")
 	}
 	x, err := Pop()
 	if err != nil {
@@ -88,36 +97,44 @@ func Div() error {
 		x = x - y
 		z++
 	}
-	Push(z)
+	err = Push(z)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func Peek() (int, error) {
-	if len(vm.Stack) == 0 {
-		return 0, errors.New("Stack is empty.")
+	if vm.Spointer == 0 {
+		return 0, errors.New("Stack underflow.")
 	}
 	x := vm.Stack[vm.Spointer-1]
-	//return s[len(s)-1:][0], nil
 	return x, nil
 }
 
 func Dup() error {
-	if len(vm.Stack) == 0 {
-		return errors.New("Stack is empty.")
+	if vm.Spointer == 0 {
+		return errors.New("Stack underflow.")
 	}
 	x, err := Peek()
 	if err != nil {
 		return err
 	}
-	Push(x)
+	err = Push(x)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func Print() error {
-	if len(vm.Stack) == 0 {
-		return errors.New("Stack is empty.")
+	if vm.Spointer == 0 {
+		return errors.New("Stack underflow.")
 	}
-	x, _ := Peek()
+	x, err := Peek()
+	if err != nil {
+		return err
+	}
 	fmt.Print(string(x))
 	return nil
 }

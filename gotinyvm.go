@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	//"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -20,12 +19,9 @@ func main() {
 	vm.Stack = Stack{}
 	loadProgram(os.Args[1])
 	runProgram()
-	//fmt.Println(s)
-	//fmt.Println(y)
 }
 
 func loadProgram(path string) {
-	//f, err := ioutil.ReadFile(path)
 	f, err := os.Open(path)
 	if err != nil {
 		fmt.Println("Unable to read program file,", path)
@@ -35,14 +31,12 @@ func loadProgram(path string) {
 	i := 0
 	for scanner.Scan() {
 		vm.Instructions[i] = scanner.Text()
-		//fmt.Println("scanned:", i, vm.Instructions[i])
 		i++
 	}
 }
 
 func runProgram() {
 	for i := range vm.Instructions {
-		//fmt.Println("i", vm.Instructions[i])
 		if vm.Instructions[i] == "" {
 			break
 		}
@@ -52,16 +46,12 @@ func runProgram() {
 		if len(instr) > 1 {
 			val = instr[1]
 		}
-		//fmt.Println(">", op)
 
 		switch op {
 		case "push":
-			//fmt.Println("pu")
 			v, _ := strconv.Atoi(val)
 			Push(v)
-
 		case "print":
-			//fmt.Println("pr")
 			Print()
 		}
 	}
