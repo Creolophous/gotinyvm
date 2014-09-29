@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	//"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -18,7 +19,12 @@ func main() {
 	vm = VirtualMachine{}
 	vm.Stack = Stack{}
 	loadProgram(os.Args[1])
-	runProgram()
+	err := runProgram()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println("\nOK.")
 }
 
 func loadProgram(path string) {
@@ -33,26 +39,88 @@ func loadProgram(path string) {
 		vm.Instructions[i] = scanner.Text()
 		i++
 	}
+	vm.InstructionCount = i
 }
 
-func runProgram() {
-	for i := range vm.Instructions {
-		if vm.Instructions[i] == "" {
-			break
+func runProgram() error {
+	for {
+		if vm.Ipointer >= vm.InstructionCount {
+			return nil
+			//if vm.Ipointer < 0 || vm.Ipointer >= vm.InstructionCount {
+			//return errors.New("Invalid instruction address.")
 		}
-		instr := strings.Split(string(vm.Instructions[i]), " ")
-		op := instr[0]
+		if vm.Instructions[vm.Ipointer] == "" {
+			//return errors.New("Invalid instruction at" + string(vm.Ipointer))
+			//break
+			//fmt.Println("skipping")
+			vm.Ipointer++
+			continue
+		}
+		instr := string(vm.Instructions[vm.Ipointer])
+		instrTokens := strings.Split(instr, " ")
+		op := instrTokens[0]
 		var val string
-		if len(instr) > 1 {
-			val = instr[1]
+		if len(instrTokens) > 1 {
+			val = instrTokens[1]
 		}
 
 		switch op {
 		case "push":
-			v, _ := strconv.Atoi(val)
-			Push(v)
+			v, err := strconv.Atoi(val)
+			if err != nil {
+				return err
+			}
+			err = Push(v)
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case "pop":
+			_, err := Pop()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case "add":
+			err := Add()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case "sub":
+			err := Sub()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case "mul":
+			err := Mul()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case "div":
+			err := Div()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case "peek":
+			_, err := Peek()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case "dup":
+			err := Dup()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
 		case "print":
 			Print()
+			vm.Ipointer++
 		}
 	}
+	return nil
 }

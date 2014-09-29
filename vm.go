@@ -6,11 +6,12 @@ import (
 )
 
 type VirtualMachine struct {
-	Instructions Instructions
-	Stack        Stack
-	Ipointer     int
-	Spointer     int
-	Registers    Registers
+	Instructions     Instructions
+	Stack            Stack
+	Ipointer         int
+	Spointer         int
+	Registers        Registers
+	InstructionCount int
 }
 type Instructions [65536]string
 type Stack [256]int
