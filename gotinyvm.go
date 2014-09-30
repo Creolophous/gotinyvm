@@ -81,6 +81,12 @@ func runProgram() error {
 				return err
 			}
 			vm.Ipointer++
+		case "jump":
+			ival, err := strconv.Atoi(val)
+			if err != nil {
+				return err
+			}
+			vm.Ipointer = ival
 		case "add":
 			err := Add()
 			if err != nil {
