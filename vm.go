@@ -113,6 +113,29 @@ func Peek() (int, error) {
 	return x, nil
 }
 
+func Load(registerIdx int) error {
+	if vm.Spointer == 256 {
+		return errors.New("Stack overflow.")
+	}
+	err := Push(vm.Registers[registerIdx])
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func Store(registerIdx int) error {
+	if vm.Spointer == 0 {
+		return errors.New("Stack underflow.")
+	}
+	v, err := Pop()
+	if err != nil {
+		return err
+	}
+	vm.Registers[registerIdx] = v
+	return nil
+}
+
 func Dup() error {
 	if vm.Spointer == 0 {
 		return errors.New("Stack underflow.")
@@ -138,10 +161,6 @@ func Print() error {
 	}
 	fmt.Print(string(x))
 	return nil
-}
-
-func Jump() {
-	//
 }
 
 func Ifeq() {
