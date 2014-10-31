@@ -2,23 +2,41 @@ package main
 
 import (
 	"bufio"
-	//"errors"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
+)
+
+type ProgramListing [65536]string
+
+const (
+	opPush  = 0x01
+	opPop   = 0x02
+	opJump  = 0x03
+	opAdd   = 0x04
+	opSub   = 0x05
+	opMul   = 0x06
+	opDiv   = 0x07
+	opLoad  = 0x08
+	opStore = 0x09
+	opPeek  = 0x0a
+	opDup   = 0x0b
+	opPrint = 0x0c
 )
 
 var vm VirtualMachine
+var pl ProgramListing
+var plInstrCount int
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: vmtiny progname.bc")
+		fmt.Println("Usage: gotinyvm progname.bc")
 		os.Exit(1)
 	}
 	vm = VirtualMachine{}
 	vm.Stack = Stack{}
 	loadProgram(os.Args[1])
+	asm := NewAssembler()
+	vm.Instructions = asm.Assemble(pl, plInstrCount)
 	err := runProgram()
 	if err != nil {
 		fmt.Println(err)
@@ -27,6 +45,8 @@ func main() {
 	fmt.Println("\nOK.")
 }
 
+// loadProgram reads the program file and stores it as the ProgramListing.
+// This function also sets the vm instruction count and ProgramListing instruction count.
 func loadProgram(path string) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -36,10 +56,12 @@ func loadProgram(path string) {
 	scanner := bufio.NewScanner(f)
 	i := 0
 	for scanner.Scan() {
-		vm.Instructions[i] = scanner.Text()
+		//vm.Instructions[i] = scanner.Text()
+		pl[i] = scanner.Text()
 		i++
 	}
 	vm.InstructionCount = i
+	plInstrCount = i
 }
 
 func runProgram() error {
@@ -49,81 +71,66 @@ func runProgram() error {
 			//if vm.Ipointer < 0 || vm.Ipointer >= vm.InstructionCount {
 			//return errors.New("Invalid instruction address.")
 		}
-		if vm.Instructions[vm.Ipointer] == "" {
-			//return errors.New("Invalid instruction at" + string(vm.Ipointer))
-			//break
-			//fmt.Println("skipping")
-			vm.Ipointer++
-			continue
-		}
-		instr := string(vm.Instructions[vm.Ipointer])
-		instrTokens := strings.Split(instr, " ")
-		op := instrTokens[0]
-		var val string
-		if len(instrTokens) > 1 {
-			val = instrTokens[1]
-		}
+		instr := vm.Instructions[vm.Ipointer]
+		op := instr.ByteCode
+		val := instr.InstrVal
 
 		switch op {
-		case "push":
-			v, err := strconv.Atoi(val)
-			if err != nil {
-				return err
-			}
-			err = Push(v)
+		case opPush:
+			v := int(val)
+			err := Push(v)
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "pop":
+		case opPop:
 			_, err := Pop()
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "jump":
-			ival, err := strconv.Atoi(val)
-			if err != nil {
-				return err
-			}
+		case opJump:
+			ival := int(val)
 			vm.Ipointer = ival
-		case "add":
+		case opAdd:
 			err := Add()
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "sub":
+		case opSub:
 			err := Sub()
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "mul":
+		case opMul:
 			err := Mul()
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "div":
+		case opDiv:
 			err := Div()
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "peek":
+		case opLoad:
+
+		case opPeek:
 			_, err := Peek()
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "dup":
+		case opDup:
 			err := Dup()
 			if err != nil {
 				return err
 			}
 			vm.Ipointer++
-		case "print":
+		case opPrint:
 			Print()
 			vm.Ipointer++
 		}

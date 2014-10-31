@@ -13,7 +13,7 @@ type VirtualMachine struct {
 	Registers        Registers
 	InstructionCount int
 }
-type Instructions [65536]string
+type Instructions [65536]ByteInstruction
 type Stack [256]int
 type Registers [16]int
 
