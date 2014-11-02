@@ -7,23 +7,28 @@ import (
 	"strings"
 )
 
+// Assembler represents the assembler.
 type Assembler struct {
 	//
 }
 
+// ByteInstruction is an opcode and value pair.
 type ByteInstruction struct {
 	ByteCode byte
 	InstrVal byte
 }
 
+// NewAssembler returns a new Assembler.
 func NewAssembler() *Assembler {
 	return &Assembler{}
 }
 
-func (a *Assembler) Assemble(assemblyInstructions ProgramListing, lineCount int) [65536]ByteInstruction {
+// Assemble iterates the lines of the program listing and converts them to bytecode
+// instructions consisting of an opcode and a value argument for the opcode call.
+func (a *Assembler) Assemble(statements ProgramListing, lineCount int) [65536]ByteInstruction {
 	machineInstructions := [65536]ByteInstruction{}
 	for i := 0; i < lineCount; i++ {
-		instr := string(assemblyInstructions[i])
+		instr := string(statements[i])
 		instrTokens := strings.Split(instr, " ")
 		instrName := instrTokens[0]
 		var instrVal byte
@@ -36,42 +41,43 @@ func (a *Assembler) Assemble(assemblyInstructions ProgramListing, lineCount int)
 			instrVal = byte(ival)
 		}
 
+		// TODO: decide if to write concisely, or leave if needed for later features.
 		switch instrName {
 		case "push":
-			byteCode := byte(0x01)
+			byteCode := byte(opPush)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "pop":
-			byteCode := byte(0x02)
+			byteCode := byte(opPop)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "jump":
-			byteCode := byte(0x03)
+			byteCode := byte(opJump)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "add":
-			byteCode := byte(0x04)
+			byteCode := byte(opAdd)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "sub":
-			byteCode := byte(0x05)
+			byteCode := byte(opSub)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "mul":
-			byteCode := byte(0x06)
+			byteCode := byte(opMul)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "div":
-			byteCode := byte(0x07)
+			byteCode := byte(opDiv)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "load":
-			byteCode := byte(0x08)
+			byteCode := byte(opLoad)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "store":
-			byteCode := byte(0x09)
+			byteCode := byte(opStore)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "peek":
-			byteCode := byte(0x0a)
+			byteCode := byte(opPeek)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "dup":
-			byteCode := byte(0x0b)
+			byteCode := byte(opDup)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		case "print":
-			byteCode := byte(0x0c)
+			byteCode := byte(opPrint)
 			machineInstructions[i] = ByteInstruction{byteCode, instrVal}
 		}
 	}

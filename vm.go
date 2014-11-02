@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// VirtualMachine represents a virtual machine.
 type VirtualMachine struct {
 	Instructions     Instructions
 	Stack            Stack
@@ -13,11 +14,95 @@ type VirtualMachine struct {
 	Registers        Registers
 	InstructionCount int
 }
+
+// Instructions is a list of instructions received from the assembler.
 type Instructions [65536]ByteInstruction
 type Stack [256]int
 type Registers [16]int
 
-func Push(x int) error {
+func NewVirtualMachine() *VirtualMachine {
+	vm := VirtualMachine{}
+	vm.Stack = Stack{}
+	return &vm
+}
+
+// runProgram iterates the vm instructions received from the assembler
+// and makes the appropriate calls.
+func (vm *VirtualMachine) runProgram() error {
+	for {
+		if vm.Ipointer >= vm.InstructionCount {
+			return nil
+			//if vm.Ipointer < 0 || vm.Ipointer >= vm.InstructionCount {
+			//return errors.New("Invalid instruction address.")
+		}
+		instr := vm.Instructions[vm.Ipointer]
+		op := instr.ByteCode
+		val := instr.InstrVal
+
+		switch op {
+		case opPush:
+			v := int(val)
+			err := vm.Push(v)
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opPop:
+			_, err := vm.Pop()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opJump:
+			ival := int(val)
+			vm.Ipointer = ival
+		case opAdd:
+			err := vm.Add()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opSub:
+			err := vm.Sub()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opMul:
+			err := vm.Mul()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opDiv:
+			err := vm.Div()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opLoad:
+
+		case opPeek:
+			_, err := vm.Peek()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opDup:
+			err := vm.Dup()
+			if err != nil {
+				return err
+			}
+			vm.Ipointer++
+		case opPrint:
+			vm.Print()
+			vm.Ipointer++
+		}
+	}
+	return nil
+}
+
+func (vm *VirtualMachine) Push(x int) error {
 	if vm.Spointer == 256 {
 		return errors.New("Stack overflow.")
 	}
@@ -26,7 +111,7 @@ func Push(x int) error {
 	return nil
 }
 
-func Pop() (int, error) {
+func (vm *VirtualMachine) Pop() (int, error) {
 	if vm.Spointer == 0 {
 		return 0, errors.New("Stack underflow.")
 	}
@@ -35,38 +120,38 @@ func Pop() (int, error) {
 	return x, nil
 }
 
-func Add() error {
+func (vm *VirtualMachine) Add() error {
 	if vm.Spointer < 2 {
 		return errors.New("Stack underflow.")
 	}
-	x, err := Pop()
+	x, err := vm.Pop()
 	if err != nil {
 		return err
 	}
-	y, err := Pop()
+	y, err := vm.Pop()
 	if err != nil {
 		return err
 	}
-	err = Push(x + y)
+	err = vm.Push(x + y)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Sub() error {
-	return Add()
+func (vm *VirtualMachine) Sub() error {
+	return vm.Add()
 }
 
-func Mul() error {
+func (vm *VirtualMachine) Mul() error {
 	if vm.Spointer < 2 {
 		return errors.New("Stack underflow.")
 	}
-	x, err := Pop()
+	x, err := vm.Pop()
 	if err != nil {
 		return err
 	}
-	y, err := Pop()
+	y, err := vm.Pop()
 	if err != nil {
 		return err
 	}
@@ -74,22 +159,22 @@ func Mul() error {
 	for i := 0; i < y; i++ {
 		z = z + x
 	}
-	err = Push(z)
+	err = vm.Push(z)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Div() error {
+func (vm *VirtualMachine) Div() error {
 	if vm.Spointer < 2 {
 		return errors.New("Stack underflow.")
 	}
-	x, err := Pop()
+	x, err := vm.Pop()
 	if err != nil {
 		return err
 	}
-	y, err := Pop()
+	y, err := vm.Pop()
 	if err != nil {
 		return err
 	}
@@ -98,14 +183,14 @@ func Div() error {
 		x = x - y
 		z++
 	}
-	err = Push(z)
+	err = vm.Push(z)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Peek() (int, error) {
+func (vm *VirtualMachine) Peek() (int, error) {
 	if vm.Spointer == 0 {
 		return 0, errors.New("Stack underflow.")
 	}
@@ -113,22 +198,22 @@ func Peek() (int, error) {
 	return x, nil
 }
 
-func Load(registerIdx int) error {
+func (vm *VirtualMachine) Load(registerIdx int) error {
 	if vm.Spointer == 256 {
 		return errors.New("Stack overflow.")
 	}
-	err := Push(vm.Registers[registerIdx])
+	err := vm.Push(vm.Registers[registerIdx])
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Store(registerIdx int) error {
+func (vm *VirtualMachine) Store(registerIdx int) error {
 	if vm.Spointer == 0 {
 		return errors.New("Stack underflow.")
 	}
-	v, err := Pop()
+	v, err := vm.Pop()
 	if err != nil {
 		return err
 	}
@@ -136,26 +221,26 @@ func Store(registerIdx int) error {
 	return nil
 }
 
-func Dup() error {
+func (vm *VirtualMachine) Dup() error {
 	if vm.Spointer == 0 {
 		return errors.New("Stack underflow.")
 	}
-	x, err := Peek()
+	x, err := vm.Peek()
 	if err != nil {
 		return err
 	}
-	err = Push(x)
+	err = vm.Push(x)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Print() error {
+func (vm *VirtualMachine) Print() error {
 	if vm.Spointer == 0 {
 		return errors.New("Stack underflow.")
 	}
-	x, err := Peek()
+	x, err := vm.Peek()
 	if err != nil {
 		return err
 	}
@@ -163,6 +248,6 @@ func Print() error {
 	return nil
 }
 
-func Ifeq() {
+func (vm *VirtualMachine) Ifeq() {
 	//
 }
